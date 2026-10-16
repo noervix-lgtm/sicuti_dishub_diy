@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Kartu Cuti PNS (Model Fe.03) – Dishub DIY{% endblock %}
+{% block page_title %}Kartu Cuti Pegawai Negeri Sipil{% endblock %}
+{% block body %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <div class="page-title">Kartu Cuti PNS (Model Fe.03) &amp; Formulir Cuti</div>
+    <div class="page-sub">
+      Tahun aktif: <strong>{{ tahun }}</strong> &middot; Format dokumen resmi sesuai standar Dinas Perhubungan DIY
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body p-0 table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="padding-left:1.25rem">Nama Pegawai</th>
+          <th>NIP</th>
+          <th>Unit Kerja</th>
+          <th class="text-center">Jatah {{ tahun }}</th>
+          <th class="text-center">Sisa Cuti</th>
+          <th class="text-end" style="padding-right:1.25rem">Aksi Cetak Dokumen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td style="padding-left:1.25rem">
+            <div class="fw-semibold text-dark">{{ r.nama }}</div>
+            <div class="small text-muted">{{ r.jabatan or 'Pegawai' }}</div>
+            <div class="small text-muted">Kelas Jabatan {{ r.kelas_jabatan or '-' }} &middot; Masa Kerja {{ (r|masa_kerja) or '-' }}</div>
+          </td>
+          <td><span class="font-monospace text-muted">{{ r.nip or '—' }}</span></td>
+          <td><span class="small text-secondary">{{ r.unit_kerja or '—' }}</span></td>
+          <td class="text-center">
+            <span class="badge bg-light text-dark border">{{ r.total_jatah if r.total_jatah is not none else '—' }} hari</span>
+          </td>
+          <td class="text-center">
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold">
+              {{ r.sisa_cuti if r.sisa_cuti is not none else '—' }} hari
+            </span>
+          </td>
+          <td class="text-end" style="padding-right:1.25rem; white-space:nowrap">
+            <a class="btn btn-sm btn-primary px-2" target="_blank"
+               href="{{ url_for('kartu_pdf', pid=r.id) }}"
+               title="Cetak Kartu Cuti Pegawai Negeri Sipil dan Formulir Permintaan dan Pemberian Cuti">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Cetak Kartu
+            </a>
+            <a class="btn btn-sm btn-outline-secondary px-2"
+               href="{{ url_for('kartu_pdf', pid=r.id, unduh=1) }}"
+               title="Unduh Kartu Cuti Pegawai Negeri Sipil dan Formulir Permintaan dan Pemberian Cuti (PDF)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Unduh
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-5 fst-italic">
+            Belum ada data pegawai. Silakan import dari file Excel.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

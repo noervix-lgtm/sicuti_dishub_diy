@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block body %}<h4>{{ e.nama }}</h4><div class="row g-3"><div class="col-md-6"><div class="card"><div class="card-body">
+<form method="post"><input type="hidden" name="_csrf" value="{{ csrf }}">
+<div class="mb-2"><label>NIP (juga username)</label><input class="form-control" value="{{ e.nip }}" disabled></div>
+<div class="mb-2"><label>Nama</label><input name="nama" class="form-control" value="{{ e.nama }}" required></div>
+<div class="mb-2"><label>Golongan</label><input name="golongan" class="form-control" value="{{ e.golongan }}"></div>
+<div class="mb-2"><label>Unit kerja</label><input name="unit_kerja" class="form-control" value="{{ e.unit_kerja }}"></div>
+<input type="hidden" name="masa_kerja" value="{{ e.masa_kerja or '' }}">
+<div class="row g-2 mb-2">
+  <div class="col-6"><label>Jabatan</label><input name="jabatan" class="form-control" value="{{ e.jabatan or '' }}" placeholder="Contoh: Pengadministrasi"></div>
+  <div class="col-6"><label>Kelas Jabatan</label><input name="kelas_jabatan" class="form-control" value="{{ e.kelas_jabatan or '' }}" placeholder="Contoh: 7"></div>
+</div>
+<div class="row g-2 mb-2">
+  <div class="col-6"><label>TMT Kerja</label><input type="month" name="tmt_kerja" class="form-control" value="{{ (e.tmt_kerja or '')[:7] }}"></div>
+  <div class="col-6"><label>Masa Kerja</label><input class="form-control" value="{{ (e|masa_kerja) or '-' }}" disabled></div>
+</div>
+<div class="row g-2 mb-2">
+  <div class="col-6"><label>Nama Atasan Langsung</label><input name="atasan_nama" class="form-control" value="{{ e.atasan_nama or '' }}" placeholder="Nama Atasan"></div>
+  <div class="col-6"><label>NIP Atasan Langsung</label><input name="atasan_nip" class="form-control" value="{{ e.atasan_nip or '' }}" placeholder="NIP Atasan"></div>
+</div>
+<div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="aktif" id="a" {{ 'checked' if e.aktif }}><label for="a" class="form-check-label">Akun aktif</label></div>
+<button class="btn btn-primary">Simpan</button></form>
+<form method="post" class="mt-3" onsubmit="return confirm('Reset password menjadi NIP?')"><input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="aksi" value="reset"><button class="btn btn-outline-danger btn-sm">Reset Password</button></form>
+</div></div></div>
+<div class="col-md-6"><div class="card"><div class="card-body"><h6>Jatah Cuti per Tahun</h6><table class="table table-sm"><thead><tr><th>Tahun</th><th>Dasar</th><th>Dibawa</th><th>Total</th><th>Dipakai</th><th>Sisa</th><th>Ke tahun depan</th></tr></thead><tbody>
+{% for j in jt %}<tr><td>{{ j.tahun }}</td><td>{{ j.jatah_dasar }}</td><td>{{ j.tambahan_dari_tahun_sebelumnya }}</td><td>{{ j.total_jatah }}</td><td>{{ j.total_digunakan }}</td><td>{{ j.sisa_cuti }}</td><td>{{ j.cuti_dibawa_ke_tahun_berikutnya }}</td></tr>{% endfor %}</tbody></table>
+<a class="btn btn-outline-secondary btn-sm" target="_blank" href="{{ url_for('kartu_pdf',pid=e.id) }}">Cetak Kartu Cuti</a></div></div></div></div>{% endblock %}

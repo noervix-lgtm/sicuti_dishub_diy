@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge %}
+{% block title %}Pengajuan Cuti – Sistem Cuti Dishub DIY{% endblock %}
+{% block page_title %}Pengajuan Cuti Pegawai{% endblock %}
+
+{% block body %}
+<!-- Filter Status Tabs -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <div class="btn-group" role="group" aria-label="Filter status pengajuan">
+    {% for s, label in [('', 'Semua'), ('Menunggu', 'Menunggu'), ('Disetujui', 'Disetujui'), ('Ditolak', 'Ditolak')] %}
+      <a href="?status={{ s }}"
+         class="btn btn-sm {{ 'btn-primary' if st == s else 'btn-outline-secondary' }}">
+        {{ label }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="small text-muted">
+    Total: <strong>{{ rows | length }}</strong> data ditampilkan
+  </div>
+</div>
+
+<!-- Table Card -->
+<div class="card">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <h2 class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+      Daftar Pengajuan Cuti
+    </h2>
+  </div>
+
+  <div class="card-body" style="padding:0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th style="padding-left:20px">Diajukan</th>
+            <th>Nama Pegawai</th>
+            <th>Jenis Cuti</th>
+            <th>Periode Cuti</th>
+            <th class="text-center">Hari</th>
+            <th class="text-center">Status</th>
+            <th>Nomor &amp; Tanggal Surat</th>
+            <th style="padding-right:20px;text-align:right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td style="padding-left:20px" class="small text-muted">
+              {{ r.tanggal_pengajuan }}
+            </td>
+            <td>
+              <div class="fw-semibold text-dark">{{ r.nama }}</div>
+              <div class="small text-muted">NIP {{ r.nip or '—' }}</div>
+            </td>
+            <td>
+              <span class="fw-medium">{{ r.jenis_cuti }}</span>
+            </td>
+            <td class="small">
+              {{ r.tanggal_mulai | tgl }}
+              {% if r.tanggal_selesai != r.tanggal_mulai %}
+                <span class="text-muted">&ndash;</span> {{ r.tanggal_selesai | tgl }}
+              {% endif %}
+            </td>
+            <td class="text-center fw-semibold">
+              {{ r.jumlah_hari }}
+            </td>
+            <td class="text-center">
+              {{ badge(r.status) }}
+            </td>
+            <td class="small">
+              {% if r.nomor_surat %}
+                <div class="fw-semibold text-dark">{{ r.nomor_surat }}</div>
+                <div class="text-muted">{{ r.tanggal_surat | tgl }}</div>
+              {% else %}
+                <span class="text-muted fst-italic">—</span>
+              {% endif %}
+            </td>
+            <td style="padding-right:20px;text-align:right;white-space:nowrap">
+              <a href="{{ url_for('cetak_gabungan_pdf', pid=r.id) }}" target="_blank"
+                 class="btn btn-sm btn-outline-success me-1"
+                 title="Cetak Formulir Permintaan dan Pemberian Cuti (+ Kartu)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Cetak Formulir
+              </a>
+              {% if r.status == 'Menunggu' %}
+                <a href="{{ url_for('detail', pid=r.id) }}" class="btn btn-sm btn-primary">
+                  Proses
+                </a>
+              {% else %}
+                <a href="{{ url_for('detail', pid=r.id) }}" class="btn btn-sm btn-outline-secondary">
+                  Detail
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-5 fst-italic">
+              Tidak ada data pengajuan cuti yang sesuai filter.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

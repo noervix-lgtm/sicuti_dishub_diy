@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block body %}<h4>Hari Libur / Cuti Bersama</h4><p class="text-muted">Tanggal di sini tidak dihitung sebagai hari cuti.</p>
+<div class="card mb-3"><div class="card-body"><form method="post" class="row g-2"><input type="hidden" name="_csrf" value="{{ csrf }}">
+<div class="col-md-3"><input type="date" name="tanggal" class="form-control" required></div><div class="col-md-6"><input name="ket" class="form-control" placeholder="Keterangan"></div><div class="col-md-3"><button class="btn btn-primary w-100">Tambah</button></div></form></div></div>
+<div class="card"><div class="card-body"><table class="table"><tbody>{% for r in rows %}<tr><td>{{ r.tanggal|tgl }}</td><td>{{ r.keterangan }}</td>
+<td><form method="post"><input type="hidden" name="_csrf" value="{{ csrf }}"><button name="hapus" value="{{ r.tanggal }}" class="btn btn-sm btn-outline-danger">Hapus</button></form></td></tr>
+{% else %}<tr><td class="text-muted">Belum ada.</td></tr>{% endfor %}</tbody></table></div></div>{% endblock %}

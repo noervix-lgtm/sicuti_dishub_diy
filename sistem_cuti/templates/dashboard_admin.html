@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge %}
+{% block title %}Dashboard Admin – Sistem Cuti Dishub DIY{% endblock %}
+{% block page_title %}Dashboard Admin{% endblock %}
+{% block body %}
+{% set nama_depan = user.nama.split(',')[0].strip() %}
+<div class="welcome-banner">
+  <div class="welcome-banner-text">
+    <h3>Selamat Datang, {{ nama_depan }}!</h3>
+    <p>Kelola dan pantau seluruh permohonan cuti pegawai Dinas Perhubungan DIY secara efisien.</p>
+    <div class="welcome-banner-date">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Tahun Aktif Kepegawaian: <strong>{{ get_setting('tahun_aktif') or '2026' }}</strong></span>
+    </div>
+  </div>
+  <div class="welcome-banner-illust">
+    <svg width="120" height="85" viewBox="0 0 120 85" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="15" width="70" height="50" rx="8" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+      <rect x="20" y="25" width="30" height="6" rx="3" fill="#22C1EE"/>
+      <rect x="20" y="36" width="50" height="4" rx="2" fill="rgba(255,255,255,0.5)"/>
+      <rect x="20" y="45" width="40" height="4" rx="2" fill="rgba(255,255,255,0.5)"/>
+      <circle cx="85" cy="55" r="20" fill="#FEC11B"/>
+      <polyline points="78 55 83 60 92 49" stroke="#0A2A6B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</div>
+
+<!-- Stats grid -->
+<div class="row g-3 mb-4">
+  <div class="col-md col-6">
+    <div class="stat stat-teal">
+      <div class="stat-label">Pegawai Aktif</div>
+      <div class="stat-value">{{ st.pegawai }}</div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="stat" style="border-left-color:var(--muted)">
+      <div class="stat-label">Total Pengajuan</div>
+      <div class="stat-value">{{ st.total }}</div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="stat stat-amber">
+      <div class="stat-label">Menunggu</div>
+      <div class="stat-value">{{ st.menunggu }}</div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="stat stat-green">
+      <div class="stat-label">Disetujui</div>
+      <div class="stat-value">{{ st.setuju }}</div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="stat stat-red">
+      <div class="stat-label">Ditolak</div>
+      <div class="stat-value">{{ st.tolak }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Pending action alert -->
+{% if st.menunggu %}
+<a href="{{ url_for('admin_pengajuan', status='Menunggu') }}"
+   class="alert alert-warning d-block text-decoration-none mb-4"
+   style="font-weight:600;border-radius:var(--radius)">
+  &#9888;&nbsp; <b>Pengajuan Cuti Baru ({{ st.menunggu }})</b> &ndash; klik untuk memproses sekarang.
+</a>
+{% endif %}
+
+<!-- Pending submissions table -->
+<div class="card">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <h2 class="card-title" style="font-size:15px">
+      Pengajuan Cuti Baru ({{ baru|length }})
+    </h2>
+    <a href="{{ url_for('admin_pengajuan', status='Menunggu') }}"
+       class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrapper">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Nama Pegawai</th>
+            <th>Jenis Cuti</th>
+            <th>Tanggal Mulai</th>
+            <th>Hari</th>
+            <th>Diajukan</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in baru %}
+          <tr>
+            <td>
+              <div style="font-weight:600">{{ r.nama }}</div>
+              <div class="small text-muted">{{ r.nip }}</div>
+            </td>
+            <td>{{ r.jenis_cuti }}</td>
+            <td>{{ r.tanggal_mulai | tgl }}</td>
+            <td>{{ r.jumlah_hari }} hari</td>
+            <td class="text-muted small">{{ r.tanggal_pengajuan }}</td>
+            <td style="white-space:nowrap;text-align:right">
+              <a href="{{ url_for('cetak_gabungan_pdf', pid=r.id) }}" target="_blank"
+                 class="btn btn-sm btn-outline-success me-1"
+                 title="Cetak Formulir Permintaan dan Pemberian Cuti (+ Kartu)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Cetak Formulir
+              </a>
+              <a href="{{ url_for('detail', pid=r.id) }}"
+                 class="btn btn-sm btn-primary">Proses</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center;color:var(--muted);padding:32px;font-style:italic">
+              Tidak ada pengajuan yang menunggu.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

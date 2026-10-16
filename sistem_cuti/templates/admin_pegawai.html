@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}Data Pegawai{% endblock %}
+{% block body %}<div class="d-flex justify-content-between"><h4>Data Pegawai</h4><a href="{{ url_for('admin_import') }}" class="btn btn-outline-primary btn-sm align-self-center">Import dari Excel</a></div>
+<div class="card mb-3"><div class="card-body"><h6>Tambah Pegawai</h6><form method="post" class="row g-2"><input type="hidden" name="_csrf" value="{{ csrf }}">
+<div class="col-md-2"><input name="nip" class="form-control" placeholder="NIP" required></div><div class="col-md-3"><input name="nama" class="form-control" placeholder="Nama" required></div>
+<div class="col-md-2"><input name="golongan" class="form-control" placeholder="Golongan"></div><div class="col-md-3"><input name="unit_kerja" class="form-control" placeholder="Unit kerja"></div>
+<div class="col-md-2"><button class="btn btn-primary w-100">Tambah</button></div></form></div></div>
+<div class="card"><div class="card-body table-responsive"><table class="table table-hover align-middle tbl-pegawai"><thead><tr><th>Nama</th><th>NIP</th><th>Gol.</th><th>Unit Kerja</th><th>Jabatan</th><th>Kelas</th><th>Masa Kerja</th><th>Jatah {{ tahun }}</th><th>Dipakai</th><th>Sisa</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr class="{{ '' if r.aktif else 'table-secondary' }}"><td>{{ r.nama }}</td><td>{{ r.nip }}</td><td>{{ r.golongan }}</td><td>{{ r.unit_kerja }}</td><td>{{ r.jabatan or '-' }}</td><td>{{ r.kelas_jabatan or '-' }}</td><td>{{ (r|masa_kerja) or '-' }}</td><td>{{ r.total_jatah if r.total_jatah is not none else '-' }}</td><td>{{ r.total_digunakan if r.total_digunakan is not none else '-' }}</td><td>{{ r.sisa_cuti if r.sisa_cuti is not none else '-' }}</td><td><a href="{{ url_for('admin_pegawai_edit',pid=r.id) }}">Kelola</a></td></tr>
+{% else %}<tr><td colspan="11" class="text-center text-muted">Belum ada pegawai. Tambahkan atau import dari Excel.</td></tr>{% endfor %}</tbody></table></div></div>{% endblock %}

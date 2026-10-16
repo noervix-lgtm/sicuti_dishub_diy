@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge %}
+{% block title %}Detail Pengajuan - Sistem Cuti Dishub DIY{% endblock %}
+{% block page_title %}Detail Pengajuan Cuti{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
+
+    <div class="card mb-4">
+      <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h2 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          Informasi Permohonan Cuti
+        </h2>
+        <div>{{ badge(p.status) }}</div>
+      </div>
+      <div class="card-body">
+        <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">Data Pegawai</div>
+        <div class="p-3 rounded mb-4" style="background:var(--bg);border:1px solid var(--border)">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="small text-muted">Nama Pegawai</div>
+              <div class="fw-semibold text-dark">{{ p.nama }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="small text-muted">NIP</div>
+              <div class="fw-semibold text-dark">{{ p.nip or "-" }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="small text-muted">Golongan / Pangkat</div>
+              <div class="fw-semibold text-dark">{{ p.golongan or "-" }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="small text-muted">Unit Kerja</div>
+              <div class="fw-semibold text-dark">{{ p.unit_kerja or "Dinas Perhubungan DIY" }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">Rincian Cuti</div>
+        <div class="p-3 rounded mb-4" style="background:var(--bg);border:1px solid var(--border)">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="small text-muted">Jenis Cuti</div>
+              <div class="fw-semibold text-dark">{{ p.jenis_cuti }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="small text-muted">Durasi Cuti</div>
+              <div class="fw-semibold text-dark">{{ p.jumlah_hari }} hari kerja</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="small text-muted">Tanggal Mulai</div>
+              <div class="fw-semibold text-dark">{{ p.tanggal_mulai | tgl }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="small text-muted">Tanggal Selesai</div>
+              <div class="fw-semibold text-dark">{{ p.tanggal_selesai | tgl }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="small text-muted">Diajukan Pada</div>
+              <div class="fw-semibold text-dark">{{ p.tanggal_pengajuan }}</div>
+            </div>
+            <div class="col-12 border-top pt-2 mt-2">
+              <div class="small text-muted">Alasan Cuti</div>
+              <div class="fw-normal text-dark">{{ p.alasan or "-" }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">Dokumen Bukti / Lampiran</div>
+        <div class="p-3 rounded mb-4" style="background:var(--bg);border:1px solid var(--border)">
+          {% for d in dok %}
+            <div class="d-flex align-items-center justify-content-between p-2 bg-white rounded border mb-1">
+              <div class="d-flex align-items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span class="small fw-semibold">{{ d.nama_file }}</span>
+              </div>
+              <a href="{{ url_for('bukti', did=d.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                Unduh / Lihat File
+              </a>
+            </div>
+          {% else %}
+            <div class="small text-muted fst-italic">Tidak ada dokumen lampiran.</div>
+          {% endfor %}
+        </div>
+
+        {% if p.status != 'Menunggu' %}
+        <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">Catatan Keputusan</div>
+        <div class="p-3 rounded mb-3" style="background:var(--bg);border:1px solid var(--border)">
+          <div class="row g-2">
+            <div class="col-12">
+              <div class="small text-muted">Catatan Admin</div>
+              <div class="fw-semibold text-dark">{{ p.catatan_admin or "-" }}</div>
+            </div>
+            {% if p.nomor_surat %}
+            <div class="col-sm-6 mt-2 pt-2 border-top">
+              <div class="small text-muted">Nomor Surat Izin</div>
+              <div class="fw-semibold text-dark">{{ p.nomor_surat }}</div>
+            </div>
+            <div class="col-sm-6 mt-2 pt-2 border-top">
+              <div class="small text-muted">Tanggal Surat Izin</div>
+              <div class="fw-semibold text-dark">{{ p.tanggal_surat | tgl }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if user.role == 'admin' %}
+    <div class="card mb-4" style="border: 1px solid var(--border)">
+      <div class="card-header bg-light d-flex align-items-center justify-content-between">
+        <h2 class="card-title fs-6 fw-bold mb-0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+            <path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Nomor &amp; Tanggal Surat Izin (Admin)
+        </h2>
+        <span class="badge bg-secondary">Dapat diedit kapan saja</span>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin_update_surat', pid=p.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="adm_nomor_surat" class="form-label small fw-semibold">Nomor Surat Izin</label>
+              <input type="text" id="adm_nomor_surat" name="nomor_surat" class="form-control"
+                     placeholder="Contoh: 800/123/2026" value="{{ p.nomor_surat or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label for="adm_tanggal_surat" class="form-label small fw-semibold">Tanggal Surat Izin</label>
+              <input type="date" id="adm_tanggal_surat" name="tanggal_surat" class="form-control"
+                     value="{{ p.tanggal_surat or '' }}">
+            </div>
+          </div>
+          <div class="mt-3 text-end">
+            <button type="submit" class="btn btn-sm btn-primary px-3">
+              Simpan Nomor &amp; Tanggal Surat
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if user.role == 'admin' and p.status == 'Menunggu' %}
+    <div class="card mb-4" style="border: 1px solid #fde68a; background: #fffdfa">
+      <div class="card-header" style="background: #fffbeb; border-bottom: 1px solid #fde68a">
+        <h2 class="card-title text-warning-emphasis">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 14 14"/>
+          </svg>
+          Proses Keputusan Admin
+        </h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('proses', pid=p.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf }}">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="nomor_surat" class="form-label small fw-semibold">Nomor Surat Izin (Opsional)</label>
+              <input type="text" id="nomor_surat" name="nomor_surat" class="form-control" placeholder="Contoh: 800/123/2026" value="{{ p.nomor_surat or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label for="tanggal_surat" class="form-label small fw-semibold">Tanggal Surat Izin</label>
+              <input type="date" id="tanggal_surat" name="tanggal_surat" class="form-control" value="{{ p.tanggal_surat or '' }}">
+            </div>
+            <div class="col-12">
+              <label for="catatan" class="form-label small fw-semibold">Catatan Keputusan / Alasan Penolakan</label>
+              <input type="text" id="catatan" name="catatan" class="form-control" placeholder="Tuliskan catatan pertimbangan bila diperlukan...">
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2 pt-2 border-top">
+            <button type="submit" name="aksi" value="setuju" class="btn btn-success px-4"
+                    onclick="return confirm('Setujui pengajuan ini? Kuota cuti tahunan pegawai akan dipotong otomatis.')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Setujui Permohonan
+            </button>
+            <button type="submit" name="aksi" value="tolak" class="btn btn-danger px-4"
+                    onclick="return confirm('Tolak permohonan cuti ini?')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              Tolak Permohonan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if user.role == 'admin' or user.id == p.pegawai_id %}
+    <div class="card mb-4" style="border: 1px solid #ccead9; background: #f0faf4">
+      <div class="card-body py-3 px-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <div class="fw-semibold" style="color:#1a7a4a">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              Cetak Dokumen Cuti (A4)
+            </div>
+            <div class="small text-muted mt-1">
+              Formulir Permintaan &amp; Pemberian Cuti dan Kartu Cuti PNS (Model Fe.03). Data terisi otomatis.
+            </div>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('cetak_gabungan_pdf', pid=p.id) }}" target="_blank"
+               id="btn-cetak-formulir-kartu"
+               class="btn btn-sm px-3 fw-semibold"
+               style="background:#1a7a4a;color:#fff;border-color:#1a7a4a">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              Cetak Formulir + Kartu (2 Hal)
+            </a>
+            <a href="{{ url_for('formulir_tunggal_pdf', pid=p.id) }}" target="_blank"
+               id="btn-cetak-formulir-tunggal"
+               class="btn btn-sm btn-outline-success fw-semibold px-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              Formulir Permintaan &amp; Pemberian Cuti (1 Hal)
+            </a>
+            <a href="{{ url_for('kartu_pdf', pid=p.pegawai_id) }}" target="_blank"
+               id="btn-cetak-kartu"
+               class="btn btn-sm btn-outline-secondary fw-semibold px-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <rect x="3" y="4" width="18" height="16" rx="2"/>
+                <line x1="7" y1="8" x2="17" y2="8"/>
+                <line x1="7" y1="12" x2="17" y2="12"/>
+              </svg>
+              Kartu Cuti PNS (Fe.03)
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mb-4">
+      <a href="javascript:history.back()" class="btn btn-outline-secondary">&larr; Kembali</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

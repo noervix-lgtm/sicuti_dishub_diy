@@ -1,0 +1,3 @@
+{% macro ic(n) %}<svg class="i" aria-hidden="true"><use href="#i-{{n}}"/></svg>{% endmacro %}
+{% macro badge(s) %}<span class="badge b-{{ s|lower }}">{{ s }}</span>{% endmacro %}
+{% macro flashes() %}{% for c,m in get_flashed_messages(with_categories=true) %}<div class="alert a-{{c}}">{{ m }}</div>{% endfor %}{% endmacro %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% block body %}<h4>Import Data Pegawai dari Excel</h4>
+<div class="card mb-3"><div class="card-body"><form method="post" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="{{ csrf }}">
+<label>Pilih file KARTU CUTI PNS.xlsx</label><div class="input-group"><input type="file" name="file" accept=".xlsx,.xlsm" class="form-control" required><button class="btn btn-primary">Periksa Struktur</button></div></form></div></div>
+{% if prev %}<div class="card"><div class="card-body"><h5>Hasil pemeriksaan</h5>
+{% for nm,heads,kol in prev.info %}<p><b>Sheet:</b> {{ nm }}<br><b>Kolom terbaca:</b> {% for k,i in kol.items() %}<span class="badge bg-secondary">{{ k }} ← "{{ heads[i] }}"</span> {% endfor %}</p>{% else %}<div class="alert alert-warning">Tidak ditemukan baris judul yang memuat kolom NIP.</div>{% endfor %}
+<p>Total baris pegawai terbaca: <b>{{ prev.total }}</b>. Contoh 10 baris pertama:</p>
+<table class="table table-sm"><thead><tr><th>NIP</th><th>Nama</th><th>Golongan</th><th>Unit</th><th>Hak</th><th>Diambil</th></tr></thead><tbody>
+{% for r in prev.rows %}<tr><td>{{ r.nip }}</td><td>{{ r.nama }}</td><td>{{ r.golongan }}</td><td>{{ r.unit_kerja }}</td><td>{{ r.hak }}</td><td>{{ r.diambil }}</td></tr>{% endfor %}</tbody></table>
+{% if prev.total %}<form method="post" action="{{ url_for('admin_import_proses') }}"><input type="hidden" name="_csrf" value="{{ csrf }}">
+<div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="kosongkan" value="ya" id="k" onclick="if(this.checked&&!confirm('Semua data pegawai & cuti lama akan DIHAPUS. Lanjutkan?'))this.checked=false"><label for="k" class="form-check-label text-danger">Hapus dulu semua data pegawai &amp; cuti yang ada (berbahaya)</label></div>
+<button class="btn btn-success">Import ke Database</button></form>{% endif %}</div></div>{% endif %}{% endblock %}

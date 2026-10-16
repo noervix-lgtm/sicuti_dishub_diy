@@ -1,0 +1,12 @@
+{% macro badge(s) %}
+  {% if s == 'Menunggu' %}
+    <span class="badge bg-warning"><span class="dot dot-amber"></span>{{ s }}</span>
+  {% elif s == 'Disetujui' %}
+    <span class="badge bg-success"><span class="dot dot-green"></span>{{ s }}</span>
+  {% elif s == 'Ditolak' %}
+    <span class="badge bg-danger"><span class="dot dot-red"></span>{{ s }}</span>
+  {% else %}
+    <span class="badge bg-secondary">{{ s or '-' }}</span>
+  {% endif %}
+{% endmacro %}
+{% macro csrf_in(t) %}<input type="hidden" name="_csrf" value="{{ t }}">{% endmacro %}

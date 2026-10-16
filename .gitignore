@@ -1,0 +1,25 @@
+# Python & Lingkungan Virtual
+venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.env
+
+# File besar di atas limit 100MB GitHub
+SURAT_CUTI_UMUM.docx
+
+# Database cadangan & file uji coba sementara
+sistem_cuti/database_cadangan.db
+sistem_cuti/database_sebelum_*.db
+sistem_cuti/test_*.pdf
+
+# File sistem & IDE
+*.bak
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

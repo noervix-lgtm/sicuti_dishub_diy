@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Sistem Cuti Dishub DIY{% endblock %}</title>
+<meta name="description" content="Sistem Informasi Pengelolaan Cuti Pegawai Dinas Perhubungan DIY">
+<link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/logo-dishub-diy.jpeg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/style.css') }}?v=4" rel="stylesheet">
+</head>
+<body>
+
+{% if user %}
+<!-- App Shell with Sidebar -->
+<div class="app-shell">
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar no-print" id="sidebar">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <img src="{{ url_for('static', filename='img/logo-dishub-diy.jpeg') }}"
+           alt="Logo Dishub DIY" class="sidebar-logo">
+      <div class="sidebar-brand-text">
+        <span class="app-name">Sistem Cuti</span>
+        <span class="app-sub">{{ instansi or 'Dishub DIY' }}</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      {% if user.role == 'admin' %}
+        <div class="nav-group-label">Menu Utama</div>
+        <a href="{{ url_for('admin_dashboard') }}"
+           class="{{ 'active' if request.endpoint == 'admin_dashboard' else '' }}"
+           data-icon="dashboard">
+          Dashboard
+        </a>
+        <a href="{{ url_for('admin_pengajuan') }}"
+           class="{{ 'active' if request.endpoint == 'admin_pengajuan' else '' }}"
+           data-icon="file-text">
+          Pengajuan Cuti
+          {% if notif %}
+            <span class="nav-badge" id="notif-badge">{{ notif }}</span>
+          {% else %}
+            <span class="nav-badge" id="notif-badge" style="display:none">0</span>
+          {% endif %}
+        </a>
+        <a href="{{ url_for('admin_riwayat') }}"
+           class="{{ 'active' if request.endpoint == 'admin_riwayat' else '' }}"
+           data-icon="history">
+          Riwayat Cuti
+        </a>
+        <a href="{{ url_for('admin_pegawai') }}"
+           class="{{ 'active' if request.endpoint in ('admin_pegawai','admin_pegawai_edit') else '' }}"
+           data-icon="users">
+          Data Pegawai
+        </a>
+        <a href="{{ url_for('admin_kartu') }}"
+           class="{{ 'active' if request.endpoint == 'admin_kartu' else '' }}"
+           data-icon="id-card">
+          Kartu Cuti
+        </a>
+
+        <div class="nav-group-label">Pengaturan</div>
+        <a href="{{ url_for('admin_import') }}"
+           class="{{ 'active' if request.endpoint == 'admin_import' else '' }}"
+           data-icon="upload">
+          Import Excel
+        </a>
+        <a href="{{ url_for('tahun_baru') }}"
+           class="{{ 'active' if request.endpoint == 'tahun_baru' else '' }}"
+           data-icon="calendar">
+          Buat Tahun Cuti Baru
+        </a>
+        <a href="{{ url_for('admin_libur') }}"
+           class="{{ 'active' if request.endpoint == 'admin_libur' else '' }}"
+           data-icon="calendar">
+          Hari Libur
+        </a>
+        <a href="{{ url_for('admin_pengaturan') }}"
+           class="{{ 'active' if request.endpoint == 'admin_pengaturan' else '' }}"
+           data-icon="settings">
+          Nama Instansi
+        </a>
+
+      {% else %}
+        <div class="nav-group-label">Menu</div>
+        <a href="{{ url_for('dashboard') }}"
+           class="{{ 'active' if request.endpoint == 'dashboard' else '' }}"
+           data-icon="dashboard">
+          Dashboard
+        </a>
+        <a href="{{ url_for('ajukan') }}"
+           class="{{ 'active' if request.endpoint == 'ajukan' else '' }}"
+           data-icon="plus">
+          Ajukan Cuti
+        </a>
+        <a href="{{ url_for('formulir_saya') }}" target="_blank" data-icon="file-text">
+          Formulir Cuti (PDF)
+        </a>
+        <a href="{{ url_for('kartu_saya') }}" target="_blank" data-icon="id-card">
+          Kartu Cuti (PDF)
+        </a>
+      {% endif %}
+    </nav>
+
+    <!-- Sidebar Footer: user info + actions -->
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">{{ user.nama[0] | upper }}</div>
+        <div>
+          <div class="sidebar-user-name">{{ user.nama }}</div>
+          <div class="sidebar-user-role">{{ 'Administrator' if user.role == 'admin' else 'Pegawai' }}</div>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <a href="{{ url_for('ganti_password') }}" title="Ganti Password" data-icon="key">Ganti Sandi</a>
+        <a href="{{ url_for('logout') }}" class="logout-link" title="Logout" data-icon="log-out">Keluar</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-area">
+    <!-- Topbar (mobile-first) -->
+    <header class="topbar no-print">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Buka navigasi">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div>
+          <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        {% set nama_depan = (user.nama.split(',')[0].strip())[:28] %}
+        <div class="user-chip">
+          <div class="user-chip-avatar">{{ user.nama[0] | upper }}</div>
+          <div class="user-chip-info">
+            <span class="user-chip-name" title="{{ user.nama }}">{{ nama_depan }}</span>
+            {% if user.nama != 'Administrator' %}
+              <span class="user-chip-role">{{ 'Admin' if user.role == 'admin' else 'Pegawai' }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content-wrapper">
+      <!-- Flash messages -->
+      {% with m = get_flashed_messages(with_categories=true) %}
+        {% for c, t in m %}
+          <div class="alert alert-{{ c }} alert-dismissible fade show" role="alert">
+            {{ t }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+          </div>
+        {% endfor %}
+      {% endwith %}
+
+{% block body %}{% endblock %}
+    </div>
+  </div>
+
+</div><!-- /.app-shell -->
+
+{% else %}
+<!-- Unauthenticated pages (login) -->
+{% with m = get_flashed_messages(with_categories=true) %}
+  {% for c, t in m %}
+    <div style="position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;min-width:320px">
+      <div class="alert alert-{{ c }} alert-dismissible fade show" role="alert">
+        {{ t }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+      </div>
+    </div>
+  {% endfor %}
+{% endwith %}
+
+{% block unauth_body %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/icons.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

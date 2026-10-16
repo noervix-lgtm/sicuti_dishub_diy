@@ -1,0 +1,70 @@
+﻿{% extends "base.html" %}
+{% block title %}Pengaturan Sistem – Sistem Cuti Dishub DIY{% endblock %}
+{% block page_title %}Pengaturan Sistem{% endblock %}
+{% block body %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Pengaturan Sistem
+        </h2>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <input type="hidden" name="_csrf" value="{{ csrf }}">
+
+          <div class="mb-4">
+            <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">1. Identitas Instansi</div>
+            <div class="mb-3">
+              <label for="instansi" class="form-label fw-semibold">Nama Instansi (tampil di Kartu Cuti)</label>
+              <input id="instansi" name="instansi" class="form-control" value="{{ instansi }}" required placeholder="Contoh: DINAS PERHUBUNGAN DIY">
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">2. Data Pejabat Penandatangan (untuk Formulir Cuti)</div>
+            <div class="form-text mb-3">
+              Data ini digunakan sebagai tanda tangan "Mengetahui / Menyetujui" di Halaman 1 formulir cetak.
+              Kosongkan jika belum ada; formulir akan menampilkan garis kosong.
+            </div>
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label for="kepala_nama" class="form-label fw-semibold">Nama Kepala / Pejabat Berwenang</label>
+                <input id="kepala_nama" name="kepala_nama" class="form-control"
+                       value="{{ get_setting('kepala_nama') }}"
+                       placeholder="Contoh: Drs. AHMAD SUDIRMAN, M.Si">
+              </div>
+              <div class="col-md-4">
+                <label for="kepala_nip" class="form-label fw-semibold">NIP Kepala</label>
+                <input id="kepala_nip" name="kepala_nip" class="form-control"
+                       value="{{ get_setting('kepala_nip') }}"
+                       placeholder="NIP pejabat">
+              </div>
+              <div class="col-12">
+                <label for="kepala_jabatan" class="form-label fw-semibold">Jabatan Kepala</label>
+                <input id="kepala_jabatan" name="kepala_jabatan" class="form-control"
+                       value="{{ get_setting('kepala_jabatan') }}"
+                       placeholder="Contoh: Kepala Dinas Perhubungan Daerah Istimewa Yogyakarta">
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-top">
+            <button type="submit" class="btn btn-primary px-4">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Simpan Pengaturan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

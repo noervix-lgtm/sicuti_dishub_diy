@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block body %}<div class="row justify-content-center"><div class="col-md-7"><div class="card"><div class="card-body">
+<h5>Buat Tahun Cuti Baru</h5>
+<p>Tahun aktif sekarang: <b>{{ lama }}</b>. Akan dibuat tahun: <b>{{ baru }}</b>.</p>
+<p>Untuk setiap pegawai: <code>Cuti dibawa = pembulatan ke atas (sisa {{ lama }} ÷ 2)</code>, lalu <code>jatah {{ baru }} = 12 + cuti dibawa</code>. Data tahun {{ lama }} tetap tersimpan.</p>
+{% if sudah %}<div class="alert alert-warning">Tahun {{ baru }} sudah pernah dibuat.</div>{% else %}
+<form method="post" onsubmit="return confirm('Yakin membuat tahun {{ baru }}? Proses ini tidak dapat diulang.')"><input type="hidden" name="_csrf" value="{{ csrf }}">
+<label>Ketik <b>{{ baru }}</b> untuk konfirmasi</label><input name="konfirmasi" class="form-control mb-3" required>
+<button class="btn btn-danger">Buat Tahun {{ baru }}</button></form>{% endif %}</div></div></div></div>{% endblock %}

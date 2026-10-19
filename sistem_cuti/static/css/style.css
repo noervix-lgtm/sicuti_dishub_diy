@@ -644,6 +644,18 @@ h1,h2,h3,h4,h5,h6{color:var(--navy);font-weight:700;letter-spacing:-0.3px}
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
 }
 
+/* == Modal Z-Index Stacking Context Fix == */
+.modal {
+  z-index: 1060 !important;
+}
+.modal-backdrop {
+  z-index: 1050 !important;
+}
+.modal-dialog {
+  z-index: 1065 !important;
+  position: relative !important;
+}
+
 /* == Responsive == */
 @media(max-width:960px){
   .login-main-grid{grid-template-columns:1fr;gap:36px}

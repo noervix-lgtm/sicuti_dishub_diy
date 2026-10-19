@@ -132,4 +132,56 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const m = document.getElementById('mulai');
+  const s = document.getElementById('selesai');
+  const o = document.getElementById('hari');
+
+  function updateHari(){
+    if(!m || !o) return;
+    if(m.value && s){
+      s.min = m.value;
+      if(!s.value){
+        s.value = m.value;
+      }
+    }
+    if(!m.value || !s || !s.value){
+      o.value = '—';
+      return;
+    }
+    if(s.value < m.value){
+      o.value = 'Tanggal selesai mendahului mulai';
+      return;
+    }
+    o.value = 'Menghitung...';
+    fetch('/api/hitung-hari?mulai=' + encodeURIComponent(m.value) + '&selesai=' + encodeURIComponent(s.value))
+      .then(r => r.json())
+      .then(d => {
+        if(d && d.hari > 0){
+          o.value = d.hari + ' hari kerja';
+        } else {
+          o.value = '0 hari (libur/akhir pekan)';
+        }
+      })
+      .catch(() => {
+        o.value = '—';
+      });
+  }
+
+  if(m) {
+    m.addEventListener('change', updateHari);
+    m.addEventListener('input', updateHari);
+  }
+  if(s) {
+    s.addEventListener('change', updateHari);
+    s.addEventListener('input', updateHari);
+  }
+  if(m && m.value && s && s.value){
+    updateHari();
+  }
+});
+</script>
 {% endblock %}
+

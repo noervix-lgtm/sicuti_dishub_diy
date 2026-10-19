@@ -613,6 +613,37 @@ h1,h2,h3,h4,h5,h6{color:var(--navy);font-weight:700;letter-spacing:-0.3px}
   color: var(--text);
 }
 
+/* == Action Buttons (Edit & Hapus Riwayat Cuti) == */
+.btn-action-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-btn);
+  font-size: 12.5px;
+  transition: all var(--transition-fast);
+}
+.btn-action-hapus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-btn);
+  font-size: 12.5px;
+  color: #B91C1C;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  transition: all var(--transition-fast);
+}
+.btn-action-hapus:hover, .btn-action-hapus:focus {
+  color: #FFFFFF;
+  background-color: #DC2626;
+  border-color: #DC2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+}
+
 /* == Responsive == */
 @media(max-width:960px){
   .login-main-grid{grid-template-columns:1fr;gap:36px}

@@ -40,12 +40,12 @@ if not os.path.exists(_kp):
     open(_kp, "w").write(secrets.token_hex(32))
 app.secret_key = open(_kp).read().strip()
 
+from db_config import get_db, IntegrityError, DB_TYPE, MYSQL_TABLE_SCHEMAS
+
 # ---------------------------------------------------------------- database
 def db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys=ON")
+        g.db = get_db()
     return g.db
 
 @app.teardown_appcontext
@@ -83,14 +83,23 @@ CREATE TABLE IF NOT EXISTS pengaturan(kunci TEXT PRIMARY KEY, nilai TEXT);
 """
 
 def init_db():
-    c = sqlite3.connect(DB_PATH); c.row_factory = sqlite3.Row
-    c.executescript(SCHEMA)
+    c = get_db()
+    if isinstance(c, sqlite3.Connection) or DB_TYPE == "sqlite":
+        c.executescript(SCHEMA)
+    else:
+        for sch in MYSQL_TABLE_SCHEMAS:
+            c.execute(sch)
     kolom_baru = {
-        "pegawai": [("jabatan", "TEXT DEFAULT ''"), ("masa_kerja", "TEXT DEFAULT ''"),
-                    ("atasan_nama", "TEXT DEFAULT ''"), ("atasan_nip", "TEXT DEFAULT ''"),
-                    ("kelas_jabatan", "TEXT DEFAULT ''"), ("tmt_kerja", "TEXT DEFAULT ''")],
-        "pengajuan_cuti": [("alamat_cuti", "TEXT DEFAULT ''"), ("telp_cuti", "TEXT DEFAULT ''"),
-                          ("nomor_surat", "TEXT DEFAULT ''"), ("tanggal_surat", "TEXT DEFAULT ''")]
+        "pegawai": [("jabatan", "VARCHAR(255) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''"),
+                    ("masa_kerja", "VARCHAR(100) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''"),
+                    ("atasan_nama", "VARCHAR(255) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''"),
+                    ("atasan_nip", "VARCHAR(50) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''"),
+                    ("kelas_jabatan", "VARCHAR(50) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''"),
+                    ("tmt_kerja", "VARCHAR(50) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''")],
+        "pengajuan_cuti": [("alamat_cuti", "TEXT"),
+                          ("telp_cuti", "VARCHAR(50) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''"),
+                          ("nomor_surat", "VARCHAR(100) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''"),
+                          ("tanggal_surat", "VARCHAR(20) DEFAULT ''" if DB_TYPE == "mysql" else "TEXT DEFAULT ''")]
     }
     for tbl, kols in kolom_baru.items():
         existing = {r["name"] for r in c.execute(f"PRAGMA table_info({tbl})").fetchall()}
@@ -355,10 +364,10 @@ def ajukan():
             f = request.files.get("bukti")
             ada = f and f.filename
             if wajib and not ada: raise ValueError(f"{jenis} wajib melampirkan bukti.")
-            j = db().execute("SELECT * FROM jatah_cuti WHERE pegawai_id=? AND tahun=?", (g.user["id"], m.year)).fetchone()
             if potong:
-                if not j: raise ValueError(f"Jatah cuti tahun {m.year} belum tersedia.")
                 j = ensure_jatah(g.user["id"], m.year)
+                if not j:
+                    raise ValueError(f"Jatah cuti tahun {m.year} belum tersedia.")
                 menunggu = db().execute("""SELECT COALESCE(SUM(jumlah_hari),0) s FROM pengajuan_cuti WHERE pegawai_id=?
                     AND status='Menunggu' AND memotong_jatah=1 AND substr(tanggal_mulai,1,4)=?""",
                     (g.user["id"], str(m.year))).fetchone()["s"]
@@ -376,6 +385,8 @@ def ajukan():
             return redirect(url_for("dashboard"))
         except (ValueError, KeyError) as e:
             db().rollback(); flash(str(e), "danger")
+        except Exception as e:
+            db().rollback(); flash(f"Terjadi kesalahan: {str(e)}", "danger")
     return render_template("ajukan.html", jenis=JENIS_CUTI)
 
 @app.route("/pengajuan/<int:pid>")
@@ -469,6 +480,172 @@ def admin_update_surat(pid):
     flash("Nomor dan tanggal surat izin berhasil disimpan.", "success")
     return redirect(url_for("detail", pid=pid))
 
+@app.route("/admin/pengajuan/<int:pid>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_pengajuan_edit(pid):
+    p = db().execute("""SELECT c.*, e.nama, e.nip, e.unit_kerja, e.jabatan, e.atasan_nama, e.atasan_nip
+        FROM pengajuan_cuti c JOIN pegawai e ON e.id=c.pegawai_id
+        WHERE c.id=?""", (pid,)).fetchone()
+    if not p:
+        abort(404)
+
+    th_asal = int(p["tanggal_mulai"][:4])
+    j_asal = ensure_jatah(p["pegawai_id"], th_asal)
+    dok = db().execute("SELECT * FROM dokumen_cuti WHERE pengajuan_id=?", (pid,)).fetchall()
+
+    if request.method == "POST":
+        try:
+            jenis = request.form.get("jenis_cuti", "").strip()
+            if jenis not in JENIS_CUTI:
+                raise ValueError("Jenis cuti tidak valid.")
+
+            status_baru = request.form.get("status", "").strip()
+            if status_baru not in ("Menunggu", "Disetujui", "Ditolak"):
+                raise ValueError("Status pengajuan tidak valid (harus Menunggu, Disetujui, atau Ditolak).")
+
+            m_val = request.form.get("tanggal_mulai", "").strip()
+            s_val = request.form.get("tanggal_selesai", "").strip()
+            if not m_val or not s_val:
+                raise ValueError("Tanggal mulai dan tanggal selesai wajib diisi.")
+
+            m, s = tgl(m_val), tgl(s_val)
+            if s < m:
+                raise ValueError("Tanggal selesai tidak boleh sebelum tanggal mulai.")
+            if m.year != s.year:
+                raise ValueError("Cuti tidak boleh melewati pergantian tahun. Ajukan terpisah per tahun.")
+
+            lama_input = request.form.get("jumlah_hari", "").strip()
+            if lama_input:
+                try:
+                    hari = int(lama_input)
+                except ValueError:
+                    raise ValueError("Lama cuti harus berupa angka bulat.")
+            else:
+                hari = hitung_hari(m, s)
+
+            if hari < 1:
+                raise ValueError("Lama cuti minimal 1 hari kerja.")
+
+            potong, wajib = JENIS_CUTI[jenis]
+
+            f = request.files.get("bukti")
+            ada_upload = f and f.filename
+            cur_dok_count = len(dok)
+            if wajib and not ada_upload and cur_dok_count == 0:
+                raise ValueError(f"{jenis} wajib melampirkan bukti / dokumen pendukung.")
+
+            th_baru = m.year
+            j_baru = ensure_jatah(p["pegawai_id"], th_baru)
+
+            if potong:
+                disetujui_lain = db().execute("""SELECT COALESCE(SUM(jumlah_hari),0) s FROM pengajuan_cuti
+                    WHERE pegawai_id=? AND status='Disetujui' AND memotong_jatah=1
+                    AND substr(tanggal_mulai,1,4)=? AND id!=?""",
+                    (p["pegawai_id"], str(th_baru), pid)).fetchone()["s"]
+
+                menunggu_lain = db().execute("""SELECT COALESCE(SUM(jumlah_hari),0) s FROM pengajuan_cuti
+                    WHERE pegawai_id=? AND status='Menunggu' AND memotong_jatah=1
+                    AND substr(tanggal_mulai,1,4)=? AND id!=?""",
+                    (p["pegawai_id"], str(th_baru), pid)).fetchone()["s"]
+
+                hak_total = j_baru["jatah_dasar"] + j_baru["tambahan_dari_tahun_sebelumnya"]
+                sisa_tersedia = hak_total - j_baru["digunakan_awal"] - disetujui_lain
+
+                if status_baru == "Disetujui":
+                    if hari > sisa_tersedia:
+                        raise ValueError(f"Sisa cuti pegawai ({sisa_tersedia} hari) tidak mencukupi untuk disetujui ({hari} hari). Kuota tidak boleh minus.")
+                elif status_baru == "Menunggu":
+                    if hari + menunggu_lain > sisa_tersedia:
+                        raise ValueError(f"Sisa cuti pegawai ({sisa_tersedia} hari, dikurangi pengajuan menunggu lainnya {menunggu_lain} hari) tidak mencukupi.")
+
+            alasan = request.form.get("alasan", "").strip()[:500]
+            alamat_cuti = request.form.get("alamat_cuti", "").strip()[:300]
+            telp_cuti = request.form.get("telp_cuti", "").strip()[:30]
+            nomor_surat = request.form.get("nomor_surat", "").strip()[:100]
+            tanggal_surat = request.form.get("tanggal_surat", "").strip()[:20]
+            catatan_admin = request.form.get("catatan_admin", "").strip()[:500]
+
+            diproses_oleh = g.user["id"] if status_baru in ("Disetujui", "Ditolak") else p["diproses_oleh"]
+            tgl_proses = datetime.now().strftime("%Y-%m-%d %H:%M") if status_baru in ("Disetujui", "Ditolak") else p["tanggal_proses"]
+
+            db().execute("""UPDATE pengajuan_cuti SET
+                jenis_cuti=?, tanggal_mulai=?, tanggal_selesai=?, jumlah_hari=?,
+                alasan=?, status=?, memotong_jatah=?, catatan_admin=?,
+                nomor_surat=?, tanggal_surat=?, alamat_cuti=?, telp_cuti=?,
+                diproses_oleh=?, tanggal_proses=?
+                WHERE id=?""",
+                (jenis, m.isoformat(), s.isoformat(), hari,
+                 alasan, status_baru, potong, catatan_admin,
+                 nomor_surat, tanggal_surat, alamat_cuti, telp_cuti,
+                 diproses_oleh, tgl_proses, pid))
+
+            if ada_upload:
+                simpan_bukti(f, pid)
+
+            recalc(p["pegawai_id"], th_baru)
+            if th_asal != th_baru:
+                ensure_jatah(p["pegawai_id"], th_asal)
+                recalc(p["pegawai_id"], th_asal)
+
+            db().commit()
+            flash("Pengajuan cuti berhasil diperbarui.", "success")
+
+            next_url = request.form.get("next", "").strip()
+            if next_url and next_url.startswith("/admin"):
+                return redirect(next_url)
+            return redirect(url_for("admin_riwayat", tahun=th_baru))
+
+        except (ValueError, KeyError) as e:
+            db().rollback()
+            flash(str(e), "danger")
+            p_edit = dict(p)
+            p_edit.update({
+                "jenis_cuti": request.form.get("jenis_cuti", p["jenis_cuti"]),
+                "status": request.form.get("status", p["status"]),
+                "tanggal_mulai": request.form.get("tanggal_mulai", p["tanggal_mulai"]),
+                "tanggal_selesai": request.form.get("tanggal_selesai", p["tanggal_selesai"]),
+                "jumlah_hari": request.form.get("jumlah_hari", p["jumlah_hari"]),
+                "alasan": request.form.get("alasan", p["alasan"]),
+                "alamat_cuti": request.form.get("alamat_cuti", p["alamat_cuti"]),
+                "telp_cuti": request.form.get("telp_cuti", p["telp_cuti"]),
+                "nomor_surat": request.form.get("nomor_surat", p["nomor_surat"]),
+                "tanggal_surat": request.form.get("tanggal_surat", p["tanggal_surat"]),
+                "catatan_admin": request.form.get("catatan_admin", p["catatan_admin"]),
+            })
+            return render_template("admin_pengajuan_edit.html", p=p_edit, dok=dok, jenis=JENIS_CUTI,
+                                   j=j_asal, next_url=request.form.get("next", ""))
+
+    next_url = request.args.get("next", "")
+    return render_template("admin_pengajuan_edit.html", p=p, dok=dok, jenis=JENIS_CUTI,
+                           j=j_asal, next_url=next_url)
+
+@app.route("/admin/pengajuan/<int:pid>/hapus", methods=["POST"])
+@admin_required
+def admin_pengajuan_hapus(pid):
+    p = db().execute("SELECT * FROM pengajuan_cuti WHERE id=?", (pid,)).fetchone()
+    if not p:
+        abort(404)
+    pid_peg = p["pegawai_id"]
+    th = int(p["tanggal_mulai"][:4])
+
+    # Hapus dokumen pendukung dari tabel referensi saja (tanpa menghapus file fisik di uploads)
+    db().execute("DELETE FROM dokumen_cuti WHERE pengajuan_id=?", (pid,))
+
+    # Hapus pengajuan cuti
+    db().execute("DELETE FROM pengajuan_cuti WHERE id=?", (pid,))
+
+    # Sinkronisasi / perbarui saldo pegawai
+    ensure_jatah(pid_peg, th)
+    recalc(pid_peg, th)
+    db().commit()
+
+    flash("Pengajuan cuti berhasil dihapus.", "success")
+    next_url = request.form.get("next", "").strip()
+    if next_url and next_url.startswith("/admin"):
+        return redirect(next_url)
+    return redirect(url_for("admin_riwayat", tahun=th))
+
+
 @app.route("/admin/pegawai", methods=["GET", "POST"])
 @admin_required
 def admin_pegawai():
@@ -481,7 +658,7 @@ def admin_pegawai():
                  generate_password_hash(nip)))
             ensure_jatah(cur.lastrowid, tahun_aktif()); db().commit()
             flash("Pegawai ditambahkan. Username dan password awal = NIP.", "success")
-        except sqlite3.IntegrityError:
+        except IntegrityError:
             db().rollback(); flash("NIP/username sudah terdaftar.", "danger")
         except ValueError as e:
             flash(str(e), "danger")
@@ -1500,7 +1677,25 @@ if __name__ == "__main__":
         with socket.socket() as s:
             if s.connect_ex(("127.0.0.1", port)) != 0: break
         port += 1
-    url = f"http://127.0.0.1:{port}"
-    print("\n" + "=" * 50 + f"\n Sistem Cuti berjalan di: {url}\n Tutup jendela ini untuk menghentikan.\n" + "=" * 50)
-    threading.Timer(1.5, lambda: webbrowser.open(url)).start()
-    app.run(host="127.0.0.1", port=port, debug=False)
+
+    local_ip = "127.0.0.1"
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        pass
+
+    url_local = f"http://127.0.0.1:{port}"
+    url_lan = f"http://{local_ip}:{port}"
+    print("\n" + "=" * 60)
+    print(" SISTEM CUTI DISHUB DIY TELAH BERJALAN")
+    print("=" * 60)
+    print(f" * Akses di laptop/PC ini    : {url_local}")
+    print(f" * Akses dari perangkat lain : {url_lan}")
+    print("=" * 60)
+    print(" Tutup jendela ini untuk menghentikan server.\n")
+
+    threading.Timer(1.5, lambda: webbrowser.open(url_local)).start()
+    app.run(host="0.0.0.0", port=port, debug=False)

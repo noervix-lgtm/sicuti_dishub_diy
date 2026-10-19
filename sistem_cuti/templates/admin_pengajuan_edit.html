@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Edit Pengajuan Cuti – Sistem Cuti Dishub DIY{% endblock %}
+{% block page_title %}Edit Pengajuan Cuti Pegawai{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit Pengajuan Cuti #{{ p.id }}
+        </h2>
+        <span class="badge bg-secondary">Mode Admin</span>
+      </div>
+
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="form-edit-cuti">
+          <input type="hidden" name="_csrf" value="{{ csrf }}">
+          <input type="hidden" name="next" value="{{ next_url or '' }}">
+
+          <!-- Bagian 1: Identitas Pemohon (Hanya-Baca) -->
+          <div class="mb-4">
+            <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">
+              1. Identitas Pemohon (Hanya-Baca)
+            </div>
+            <div class="p-3 rounded" style="background:var(--bg);border:1px solid var(--border)">
+              <div class="row g-2">
+                <div class="col-sm-6">
+                  <div class="small text-muted">Nama Lengkap Pegawai</div>
+                  <div class="fw-semibold text-dark">{{ p.nama }}</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="small text-muted">NIP</div>
+                  <div class="fw-semibold text-dark">{{ p.nip or '—' }}</div>
+                </div>
+                <div class="col-sm-6 mt-2 pt-2 border-top">
+                  <div class="small text-muted">Unit Kerja</div>
+                  <div class="fw-semibold text-dark">{{ p.unit_kerja or 'Dinas Perhubungan DIY' }}</div>
+                </div>
+                <div class="col-sm-6 mt-2 pt-2 border-top">
+                  <div class="small text-muted">Atasan Langsung saat Diajukan</div>
+                  <div class="fw-semibold text-dark">{{ p.atasan_nama or '—' }} {% if p.atasan_nip %}(NIP {{ p.atasan_nip }}){% endif %}</div>
+                </div>
+              </div>
+              <div class="small text-muted mt-2 fst-italic">
+                * Nama pegawai dan atasan langsung tidak dapat diubah di sini. Jika pegawai salah, silakan hapus pengajuan ini lalu buat ulang.
+              </div>
+            </div>
+          </div>
+
+          <!-- Bagian 2: Rincian & Periode Cuti -->
+          <div class="mb-4">
+            <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">
+              2. Rincian &amp; Periode Cuti
+            </div>
+
+            <div class="mb-3">
+              <label for="jenis_cuti" class="form-label fw-semibold">Jenis Cuti <span class="text-danger">*</span></label>
+              <select name="jenis_cuti" id="jenis_cuti" class="form-select" required>
+                {% for k, (pot, waj) in jenis.items() %}
+                  <option value="{{ k }}" {% if p.jenis_cuti == k %}selected{% endif %}>
+                    {{ k }}{% if waj %} (wajib dokumen pendukung){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Hanya Cuti Tahunan yang mengurangi kuota cuti tahun berjalan.</div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-5">
+                <label for="mulai" class="form-label fw-semibold">Tanggal Mulai <span class="text-danger">*</span></label>
+                <input type="date" id="mulai" name="tanggal_mulai" class="form-control" value="{{ p.tanggal_mulai }}" required>
+              </div>
+              <div class="col-md-5">
+                <label for="selesai" class="form-label fw-semibold">Tanggal Selesai <span class="text-danger">*</span></label>
+                <input type="date" id="selesai" name="tanggal_selesai" class="form-control" value="{{ p.tanggal_selesai }}" required>
+              </div>
+              <div class="col-md-2">
+                <label for="jumlah_hari" class="form-label fw-semibold">Lama (Hari) <span class="text-danger">*</span></label>
+                <input type="number" id="jumlah_hari" name="jumlah_hari" min="1" class="form-control text-center fw-bold" value="{{ p.jumlah_hari }}" required>
+              </div>
+            </div>
+
+            <div class="form-text mt-2">
+              Lama cuti dihitung otomatis sesuai hari kerja (Senin–Jumat di luar libur nasional), namun admin tetap dapat menyesuaikannya secara manual jika diperlukan.
+            </div>
+          </div>
+
+          <!-- Bagian 3: Alasan & Dokumen Pendukung -->
+          <div class="mb-4">
+            <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">
+              3. Alasan &amp; Dokumen Pendukung
+            </div>
+
+            <div class="mb-3">
+              <label for="alasan" class="form-label fw-semibold">Alasan Cuti</label>
+              <textarea name="alasan" id="alasan" class="form-control" rows="3"
+                        placeholder="Alasan pengajuan cuti...">{{ p.alasan }}</textarea>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                <label for="alamat_cuti" class="form-label fw-semibold">Alamat Selama Cuti</label>
+                <input type="text" name="alamat_cuti" id="alamat_cuti" class="form-control"
+                       value="{{ p.alamat_cuti or '' }}"
+                       placeholder="Alamat lengkap tempat tinggal selama menjalani cuti">
+                <div class="form-text">Tampil di kolom VI Formulir Cuti.</div>
+              </div>
+              <div class="col-md-4">
+                <label for="telp_cuti" class="form-label fw-semibold">No. Telepon</label>
+                <input type="tel" name="telp_cuti" id="telp_cuti" class="form-control"
+                       value="{{ p.telp_cuti or '' }}"
+                       placeholder="Contoh: 08123456789">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="bukti" class="form-label fw-semibold">Dokumen Pendukung / Surat Bukti</label>
+              {% if dok %}
+                <div class="mb-2 p-2 rounded bg-light border">
+                  <div class="small fw-semibold text-muted mb-1">Dokumen yang sudah terunggah:</div>
+                  <ul class="list-unstyled mb-0">
+                    {% for d in dok %}
+                      <li class="small">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <a href="{{ url_for('bukti', did=d.id) }}" target="_blank" class="fw-medium">{{ d.nama_file }}</a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+              <input type="file" name="bukti" id="bukti" accept=".pdf,.jpg,.jpeg,.png" class="form-control">
+              <div class="form-text">
+                Format: PDF, JPG, atau PNG (maksimal 5 MB). Diwajibkan untuk Cuti Sakit, Melahirkan, dan Alasan Penting jika belum ada dokumen yang tersimpan.
+              </div>
+            </div>
+          </div>
+
+          <!-- Bagian 4: Status Persetujuan & Surat Izin (Admin) -->
+          <div class="mb-4">
+            <div class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing:.5px">
+              4. Status Persetujuan &amp; Surat Keputusan
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label for="status" class="form-label fw-semibold">Status Pengajuan <span class="text-danger">*</span></label>
+                <select name="status" id="status" class="form-select" required>
+                  <option value="Menunggu" {% if p.status == 'Menunggu' %}selected{% endif %}>Menunggu</option>
+                  <option value="Disetujui" {% if p.status == 'Disetujui' %}selected{% endif %}>Disetujui</option>
+                  <option value="Ditolak" {% if p.status == 'Ditolak' %}selected{% endif %}>Ditolak</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="nomor_surat" class="form-label fw-semibold">Nomor Surat Izin</label>
+                <input type="text" name="nomor_surat" id="nomor_surat" class="form-control"
+                       value="{{ p.nomor_surat or '' }}" placeholder="Contoh: 800/123/2026">
+              </div>
+              <div class="col-md-4">
+                <label for="tanggal_surat" class="form-label fw-semibold">Tanggal Surat Izin</label>
+                <input type="date" name="tanggal_surat" id="tanggal_surat" class="form-control"
+                       value="{{ p.tanggal_surat or '' }}">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="catatan_admin" class="form-label fw-semibold">Catatan Admin</label>
+              <textarea name="catatan_admin" id="catatan_admin" class="form-control" rows="2"
+                        placeholder="Catatan tambahan pertimbangan/keputusan bila ada...">{{ p.catatan_admin or '' }}</textarea>
+            </div>
+          </div>
+
+          <!-- Aksi Tombol -->
+          <div class="d-flex align-items-center gap-2 pt-3 border-top">
+            <button type="submit" class="btn btn-primary px-4">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Simpan Perubahan
+            </button>
+            <a href="{{ next_url or url_for('admin_riwayat', tahun=p.tanggal_mulai[:4]) }}" class="btn btn-outline-secondary">
+              Batal
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function hitungHariEdit(){
+  const m = document.getElementById('mulai');
+  const s = document.getElementById('selesai');
+  const o = document.getElementById('jumlah_hari');
+  if(!m || !m.value || !s.value) return;
+  fetch('/api/hitung-hari?mulai=' + encodeURIComponent(m.value) + '&selesai=' + encodeURIComponent(s.value))
+    .then(r => r.json())
+    .then(d => {
+      if(o && d.hari > 0) {
+        o.value = d.hari;
+      }
+    })
+    .catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['mulai', 'selesai'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', hitungHariEdit);
+  });
+});
+</script>
+{% endblock %}

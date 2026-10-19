@@ -1,10 +1,42 @@
 // Hitung jumlah hari otomatis pada form pengajuan
 function hitungHari(){
-  const m=document.getElementById('mulai'), s=document.getElementById('selesai'), o=document.getElementById('hari');
-  if(!m||!m.value||!s.value){return}
-  fetch('/api/hitung-hari?mulai='+encodeURIComponent(m.value)+'&selesai='+encodeURIComponent(s.value))
-    .then(r=>r.json())
-    .then(d=>{ if(o) o.value=d.hari+' hari kerja'; });
+  const m = document.getElementById('mulai');
+  const s = document.getElementById('selesai');
+  const o = document.getElementById('hari');
+  if(!m || !o) return;
+
+  if(m.value && s){
+    s.min = m.value;
+    if(!s.value){
+      s.value = m.value;
+    }
+  }
+
+  if(!m.value || !s || !s.value){
+    o.value = '—';
+    return;
+  }
+
+  if(s.value < m.value){
+    o.value = 'Tanggal selesai mendahului mulai';
+    return;
+  }
+
+  o.value = 'Menghitung...';
+  fetch('/api/hitung-hari?mulai=' + encodeURIComponent(m.value) + '&selesai=' + encodeURIComponent(s.value))
+    .then(r => r.json())
+    .then(d => {
+      if(o) {
+        if(d.hari > 0){
+          o.value = d.hari + ' hari kerja';
+        } else {
+          o.value = '0 hari (libur/akhir pekan)';
+        }
+      }
+    })
+    .catch(() => {
+      if(o) o.value = '—';
+    });
 }
 
 // Navigasi responsif sidebar mobile
@@ -25,8 +57,12 @@ function closeSidebar(){
 document.addEventListener('DOMContentLoaded',()=>{
   ['mulai','selesai'].forEach(i=>{
     const e=document.getElementById(i);
-    if(e) e.addEventListener('change',hitungHari);
+    if(e) {
+      e.addEventListener('change', hitungHari);
+      e.addEventListener('input', hitungHari);
+    }
   });
+
   // Notifikasi admin: perbarui otomatis tiap 15 detik
   const b=document.getElementById('notif-badge');
   if(b){

@@ -47,22 +47,20 @@ def main():
         print(f"Error: File Excel {xlsx_path} tidak ditemukan.")
         sys.exit(1)
 
-    if not os.path.exists(DB_PATH):
-        print(f"Error: Database {DB_PATH} tidak ditemukan.")
-        sys.exit(1)
+    sys.path.insert(0, BASE_DIR)
+    from db_config import get_db, DB_TYPE
+    from app import init_db
 
-    # 1. Cadangkan database.db ke database_sebelum_nominatif.db
-    shutil.copy2(DB_PATH, BACKUP_PATH)
-    print(f"Cadangan database berhasil dibuat: {os.path.basename(BACKUP_PATH)}")
+    # 1. Cadangkan database jika SQLite
+    if DB_TYPE == "sqlite" and os.path.exists(DB_PATH):
+        shutil.copy2(DB_PATH, BACKUP_PATH)
+        print(f"Cadangan database berhasil dibuat: {os.path.basename(BACKUP_PATH)}")
 
     # 2. Inisialisasi / migrasi kolom database lewat init_db app.py
-    sys.path.insert(0, BASE_DIR)
-    from app import init_db
     init_db()
 
     # Buka database
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
+    con = get_db()
     cur = con.cursor()
 
     r_th = cur.execute("SELECT nilai FROM pengaturan WHERE kunci='tahun_aktif'").fetchone()

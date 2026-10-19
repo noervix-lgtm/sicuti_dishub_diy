@@ -17,13 +17,10 @@ def main():
     parser.add_argument("--ya", action="store_true", help="Lewati konfirmasi interaktif")
     args = parser.parse_args()
 
-    if not os.path.exists(DB_PATH):
-        print(f"Error: Database tidak ditemukan di {DB_PATH}")
-        sys.exit(1)
+    from db_config import get_db, DB_TYPE
 
     # 1. Hitung dan tampilkan status data saat ini
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
+    con = get_db()
     cur = con.cursor()
 
     c_pengajuan = cur.execute("SELECT COUNT(*) FROM pengajuan_cuti").fetchone()[0]
@@ -50,19 +47,23 @@ def main():
             con.close()
             sys.exit(0)
 
-    # 3. Cadangkan database.db ke database_sebelum_reset.db
+    # 3. Cadangkan database jika SQLite
     con.close()
-    shutil.copy2(DB_PATH, BACKUP_PATH)
-    print(f"Cadangan database berhasil dibuat: {os.path.basename(BACKUP_PATH)}")
+    if DB_TYPE == "sqlite" and os.path.exists(DB_PATH):
+        shutil.copy2(DB_PATH, BACKUP_PATH)
+        print(f"Cadangan database berhasil dibuat: {os.path.basename(BACKUP_PATH)}")
 
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
+    con = get_db()
     cur = con.cursor()
 
     # 4. Hapus data dokumen_cuti dan pengajuan_cuti, lalu reset sequence
     cur.execute("DELETE FROM dokumen_cuti")
     cur.execute("DELETE FROM pengajuan_cuti")
-    cur.execute("DELETE FROM sqlite_sequence WHERE name IN ('pengajuan_cuti', 'dokumen_cuti')")
+    if DB_TYPE == "sqlite":
+        cur.execute("DELETE FROM sqlite_sequence WHERE name IN ('pengajuan_cuti', 'dokumen_cuti')")
+    else:
+        cur.execute("ALTER TABLE pengajuan_cuti AUTO_INCREMENT = 1")
+        cur.execute("ALTER TABLE dokumen_cuti AUTO_INCREMENT = 1")
 
     # 5. Hitung ulang saldo setiap baris di jatah_cuti
     rows_jatah = cur.execute("SELECT id, jatah_dasar, tambahan_dari_tahun_sebelumnya, digunakan_awal FROM jatah_cuti").fetchall()

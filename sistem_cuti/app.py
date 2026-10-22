@@ -442,30 +442,40 @@ def admin_pengajuan():
 @admin_required
 def proses(pid):
     aksi = request.form.get("aksi")
-    db().execute("BEGIN IMMEDIATE")
-    p = db().execute("SELECT * FROM pengajuan_cuti WHERE id=?", (pid,)).fetchone()
-    if not p or p["status"] != "Menunggu":   # cegah pemrosesan ganda
-        db().rollback(); flash("Pengajuan ini sudah diproses sebelumnya.", "warning")
+    try:
+        try:
+            db().execute("BEGIN IMMEDIATE")
+        except Exception:
+            pass
+        p = db().execute("SELECT * FROM pengajuan_cuti WHERE id=?", (pid,)).fetchone()
+        if not p or p["status"] != "Menunggu":   # cegah pemrosesan ganda
+            db().rollback(); flash("Pengajuan ini sudah diproses sebelumnya.", "warning")
+            return redirect(url_for("detail", pid=pid))
+        th = int(p["tanggal_mulai"][:4])
+        if aksi == "setuju":
+            if p["memotong_jatah"]:
+                j = ensure_jatah(p["pegawai_id"], th)
+                if p["jumlah_hari"] > j["sisa_cuti"]:
+                    db().rollback(); flash(f"Sisa cuti pegawai ({j['sisa_cuti']} hari) tidak cukup.", "danger")
+                    return redirect(url_for("detail", pid=pid))
+            status = "Disetujui"
+        elif aksi == "tolak":
+            status = "Ditolak"
+        else:
+            db().rollback(); abort(400)
+        db().execute("""UPDATE pengajuan_cuti SET status=?, catatan_admin=?, nomor_surat=?, tanggal_surat=?,
+            diproses_oleh=?, tanggal_proses=? WHERE id=?""",
+            (status, request.form.get("catatan", "").strip()[:500], request.form.get("nomor_surat", "").strip()[:100],
+             request.form.get("tanggal_surat", ""), g.user["id"], datetime.now().strftime("%Y-%m-%d %H:%M"), pid))
+        ensure_jatah(p["pegawai_id"], th)
+        db().commit(); flash(f"Pengajuan {status.lower()}.", "success")
+        return redirect(url_for("admin_pengajuan"))
+    except Exception as e:
+        db().rollback()
+        import logging
+        logging.exception("Gagal memproses pengajuan cuti:")
+        flash(f"Terjadi kesalahan saat memproses pengajuan: {e}", "danger")
         return redirect(url_for("detail", pid=pid))
-    th = int(p["tanggal_mulai"][:4])
-    if aksi == "setuju":
-        if p["memotong_jatah"]:
-            j = ensure_jatah(p["pegawai_id"], th)
-            if p["jumlah_hari"] > j["sisa_cuti"]:
-                db().rollback(); flash(f"Sisa cuti pegawai ({j['sisa_cuti']} hari) tidak cukup.", "danger")
-                return redirect(url_for("detail", pid=pid))
-        status = "Disetujui"
-    elif aksi == "tolak":
-        status = "Ditolak"
-    else:
-        db().rollback(); abort(400)
-    db().execute("""UPDATE pengajuan_cuti SET status=?, catatan_admin=?, nomor_surat=?, tanggal_surat=?,
-        diproses_oleh=?, tanggal_proses=? WHERE id=?""",
-        (status, request.form.get("catatan", "").strip()[:500], request.form.get("nomor_surat", "").strip()[:100],
-         request.form.get("tanggal_surat", ""), g.user["id"], datetime.now().strftime("%Y-%m-%d %H:%M"), pid))
-    ensure_jatah(p["pegawai_id"], th)
-    db().commit(); flash(f"Pengajuan {status.lower()}.", "success")
-    return redirect(url_for("admin_pengajuan"))
 
 @app.route("/admin/pengajuan/<int:pid>/surat", methods=["POST"])
 @admin_required
@@ -722,7 +732,10 @@ def tahun_baru():
         if request.form.get("konfirmasi", "").strip() != str(baru):
             flash(f"Ketik {baru} untuk konfirmasi.", "danger")
         else:
-            db().execute("BEGIN IMMEDIATE")
+            try:
+                db().execute("BEGIN IMMEDIATE")
+            except Exception:
+                pass
             if db().execute("SELECT 1 FROM jatah_cuti WHERE tahun=?", (baru,)).fetchone():
                 db().rollback(); flash(f"Tahun {baru} sudah pernah dibuat.", "warning")
                 return redirect(url_for("tahun_baru"))

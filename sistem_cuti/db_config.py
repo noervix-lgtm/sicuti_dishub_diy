@@ -128,6 +128,8 @@ class MySQLCursorWrapper:
     def _prepare_query(self, query):
         q = query
         # Normalisasi SQLite syntax -> MySQL syntax
+        if "BEGIN IMMEDIATE" in q:
+            q = q.replace("BEGIN IMMEDIATE", "START TRANSACTION")
         if "INSERT OR IGNORE" in q:
             q = q.replace("INSERT OR IGNORE", "INSERT IGNORE")
         if "INSERT OR REPLACE" in q:

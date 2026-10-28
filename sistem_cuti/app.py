@@ -953,15 +953,20 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
     el.append(t5)
     el.append(Spacer(1, 1.5*mm))
 
+    # Lebar kolom tanda tangan terpadu untuk Seksi VI, VII, dan VIII: diperbesar menjadi 86 mm (sebelumnya 70 mm)
+    w_ttd = 86 * mm
+    w_telp = 14 * mm
+    w_almt = W - w_ttd - w_telp
+    col_w_opt = (W - w_ttd) / 4.0   # 25 mm per kolom opsi persetujuan (DISETUJUI, PERUBAHAN, DITANGGUHKAN, TIDAK DISETUJUI)
+
     # VI. ALAMAT SELAMA MENJALANKAN CUTI
     almt = p.get("alamat_cuti") or ".................................................................................."
     telp = p.get("telp_cuti")   or "........................................................"
-    # Kolom pemohon: seluruh konten rata tengah dengan ruang tanda tangan yang cukup
-    # Menggunakan sNCen (center style) agar "Hormat saya," dan nama rata tengah
+    # Kolom pemohon: seluruh konten rata tengah dengan ruang tanda tangan yang diperbesar
     txt_pemohon = (
         f"{telp}<br/><br/>"
         f"Hormat saya,<br/>"
-        f"<br/><br/><br/><br/>"
+        f"<br/><br/><br/><br/><br/><br/>"
         f"<b>{p['nama']}</b><br/>"
         f"NIP. {p.get('nip') or '-'}"
     )
@@ -973,7 +978,7 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
             Paragraph(txt_pemohon, sNCen)
         ]
     ]
-    t6 = Table(data_alamat, colWidths=[100*mm, 16*mm, 70*mm])
+    t6 = Table(data_alamat, colWidths=[w_almt, w_telp, w_ttd])
     ts6 = list(TS_BOX) + [
         ("SPAN", (0,0), (2,0)),
         ("VALIGN", (0,1), (-1,-1), "TOP"),
@@ -995,25 +1000,25 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
     if atasan_nama_str:
         txt_atasan_ttd = (
             f"Atasan Langsung,"
-            f"<br/><br/><br/><br/><br/><br/>"
+            f"<br/><br/><br/><br/><br/><br/><br/>"
             f"<b>{atasan_nama_str}</b>"
             f"<br/>NIP. {atasan_nip_str}"
         )
     else:
         txt_atasan_ttd = (
             "Atasan Langsung,"
-            "<br/><br/><br/><br/><br/><br/>"
+            "<br/><br/><br/><br/><br/><br/><br/>"
             "( .................................................... )"
             "<br/>NIP. ...................................................."
         )
     data_atasan = [
         [Paragraph("<b>VII. PERTIMBANGAN ATASAN LANGSUNG</b>", sSec), "", "", "", ""],
         [Paragraph("DISETUJUI", sNCenB), Paragraph("PERUBAHAN", sNCenB),
-         Paragraph("DITANGGUHKAN", sNCenB), Paragraph("TIDAK DISETUJUI", sNCenB),
+         Paragraph("DITANGGUHKAN", sNCenB), Paragraph("TIDAK<br/>DISETUJUI", sNCenB),
          Paragraph(txt_atasan_ttd, sNCen)],
         [Paragraph(v_setuju, sNCenB), Paragraph("", sNCenB), Paragraph("", sNCenB), Paragraph(v_tolak, sNCenB), ""]
     ]
-    t7 = Table(data_atasan, colWidths=[29*mm, 29*mm, 29*mm, 29*mm, 70*mm])
+    t7 = Table(data_atasan, colWidths=[col_w_opt, col_w_opt, col_w_opt, col_w_opt, w_ttd])
     ts7 = list(TS_BOX) + [
         ("SPAN", (0,0), (4,0)),
         ("SPAN", (4,1), (4,2)),
@@ -1021,16 +1026,14 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
         ("VALIGN", (4,1), (4,2), "TOP"),
         ("TOPPADDING", (4,1), (4,2), 3),
         ("BOTTOMPADDING", (4,1), (4,2), 4),
-        ("BOTTOMPADDING", (0,2), (3,2), 8),
+        ("BOTTOMPADDING", (0,2), (3,2), 10),
     ]
     t7.setStyle(TableStyle(ts7))
     el.append(t7)
     el.append(Spacer(1, 1.5*mm))
 
     # VIII. KEPUTUSAN PEJABAT YANG BERWENANG MEMBERIKAN CUTI
-    # Kolom Kepala Dinas menyediakan ruang lebih besar untuk tanda tangan elektronik (QR code).
-    # Saat ini ditampilkan placeholder teks sebagai penanda posisi QR code.
-    # Integrasi QR code resmi belum tersedia; placeholder ini memudahkan penempatan QR saat tersedia nanti.
+    # Kolom Kepala Dinas menyediakan ruang lebih besar untuk tanda tangan elektronik (QR code) maupun cap/tanda tangan basah.
     kadin_nama_str = kepala_nama or ""
     kadin_nip_str  = kepala_nip  or ""
     # Placeholder QR code dalam teks ASCII sederhana (kompatibel ReportLab Paragraph)
@@ -1039,7 +1042,7 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
         txt_kadin_ttd = (
             f"{kepala_jabatan},<br/><br/>"
             f"{qr_placeholder}<br/>"
-            f"<br/><br/><br/>"
+            f"<br/><br/><br/><br/>"
             f"<b>{kadin_nama_str}</b><br/>"
             f"NIP. {kadin_nip_str}"
         )
@@ -1047,26 +1050,26 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
         txt_kadin_ttd = (
             f"{kepala_jabatan},<br/><br/>"
             f"{qr_placeholder}<br/>"
-            f"<br/><br/><br/>"
+            f"<br/><br/><br/><br/>"
             "( .................................................... )<br/>"
             "NIP. ...................................................."
         )
     data_pejabat = [
         [Paragraph("<b>VIII. KEPUTUSAN PEJABAT YANG BERWENANG MEMBERIKAN CUTI</b>", sSec), "", "", "", ""],
         [Paragraph("DISETUJUI", sNCenB), Paragraph("PERUBAHAN", sNCenB),
-         Paragraph("DITANGGUHKAN", sNCenB), Paragraph("TIDAK DISETUJUI", sNCenB),
+         Paragraph("DITANGGUHKAN", sNCenB), Paragraph("TIDAK<br/>DISETUJUI", sNCenB),
          Paragraph(txt_kadin_ttd, sNCen)],
         [Paragraph(v_setuju, sNCenB), Paragraph("", sNCenB), Paragraph("", sNCenB), Paragraph(v_tolak, sNCenB), ""]
     ]
-    t8 = Table(data_pejabat, colWidths=[29*mm, 29*mm, 29*mm, 29*mm, 70*mm])
+    t8 = Table(data_pejabat, colWidths=[col_w_opt, col_w_opt, col_w_opt, col_w_opt, w_ttd])
     ts8 = list(TS_BOX) + [
         ("SPAN", (0,0), (4,0)),
         ("SPAN", (4,1), (4,2)),
         ("VALIGN", (0,1), (-1,-1), "MIDDLE"),
         ("VALIGN", (4,1), (4,2), "TOP"),
         ("TOPPADDING", (4,1), (4,2), 3),
-        ("BOTTOMPADDING", (4,1), (4,2), 6),
-        ("BOTTOMPADDING", (0,2), (3,2), 8),
+        ("BOTTOMPADDING", (4,1), (4,2), 5),
+        ("BOTTOMPADDING", (0,2), (3,2), 10),
     ]
     t8.setStyle(TableStyle(ts8))
     el.append(t8)

@@ -956,18 +956,18 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
 
     # Lebar kolom tanda tangan terpadu untuk Seksi VI, VII, dan VIII: diperbesar menjadi 86 mm (sebelumnya 70 mm)
     w_ttd = 86 * mm
-    w_telp = 14 * mm
-    w_almt = W - w_ttd - w_telp
-    col_w_opt = (W - w_ttd) / 4.0   # 25 mm per kolom opsi persetujuan (DISETUJUI, PERUBAHAN, DITANGGUHKAN, TIDAK DISETUJUI)
+    w_almt_total = W - w_ttd                 # 100 mm untuk area data kontak (Alamat & No HP)
+    w_telp_lbl = 16 * mm                     # label TELP.
+    w_telp_val = w_almt_total - w_telp_lbl   # 84 mm untuk isian nomor telepon
+    col_w_opt = (W - w_ttd) / 4.0            # 25 mm per kolom opsi persetujuan (DISETUJUI, PERUBAHAN, DITANGGUHKAN, TIDAK DISETUJUI)
 
     # VI. ALAMAT SELAMA MENJALANKAN CUTI
     almt = p.get("alamat_cuti") or ".................................................................................."
     telp = p.get("telp_cuti")   or "........................................................"
-    # Kolom pemohon: seluruh konten rata tengah dengan ruang tanda tangan yang diperbesar
+    # Kolom pemohon: ruang tanda tangan murni (Hormat saya, ruang ttd, nama, NIP) tanpa campur nomor HP
     txt_pemohon = (
-        f"{telp}<br/><br/>"
-        f"Hormat saya,<br/>"
-        f"<br/><br/><br/><br/><br/><br/>"
+        "Hormat saya,<br/>"
+        "<br/><br/><br/><br/><br/><br/>"
         f"<b>{p['nama']}</b><br/>"
         f"NIP. {p.get('nip') or '-'}"
     )
@@ -975,16 +975,29 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
         [Paragraph("<b>VI. ALAMAT SELAMA MENJALANKAN CUTI</b>", sSec), "", ""],
         [
             Paragraph(f"{almt}", sN),
-            Paragraph("TELP.", sNBold),
+            "",
             Paragraph(txt_pemohon, sNCen)
+        ],
+        [
+            Paragraph("TELP.", sNBold),
+            Paragraph(f"{telp}", sN),
+            ""
         ]
     ]
-    t6 = Table(data_alamat, colWidths=[w_almt, w_telp, w_ttd])
+    t6 = Table(data_alamat, colWidths=[w_telp_lbl, w_telp_val, w_ttd])
     ts6 = list(TS_BOX) + [
         ("SPAN", (0,0), (2,0)),
-        ("VALIGN", (0,1), (-1,-1), "TOP"),
-        ("TOPPADDING", (0,1), (-1,-1), 3),
-        ("BOTTOMPADDING", (0,1), (-1,-1), 4),
+        ("SPAN", (0,1), (1,1)),
+        ("SPAN", (2,1), (2,2)),
+        ("VALIGN", (0,1), (1,1), "TOP"),
+        ("VALIGN", (0,2), (1,2), "MIDDLE"),
+        ("VALIGN", (2,1), (2,2), "TOP"),
+        ("TOPPADDING", (0,1), (1,1), 3),
+        ("BOTTOMPADDING", (0,1), (1,1), 3),
+        ("TOPPADDING", (0,2), (1,2), 2),
+        ("BOTTOMPADDING", (0,2), (1,2), 2),
+        ("TOPPADDING", (2,1), (2,2), 3),
+        ("BOTTOMPADDING", (2,1), (2,2), 4),
     ]
     t6.setStyle(TableStyle(ts6))
     el.append(t6)

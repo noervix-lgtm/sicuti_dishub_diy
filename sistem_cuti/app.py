@@ -796,6 +796,7 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
     sNBold  = PS("fNBold",  fontName="Times-Bold")
     sNCen   = PS("fNCen",   alignment=TA_CENTER)
     sNCenB  = PS("fNCenB",  fontName="Times-Bold", alignment=TA_CENTER)
+    sOptHdr = PS("fOptHdr", fontName="Times-Bold", fontSize=7.5, leading=9, alignment=TA_CENTER)
     sTitle  = PS("fTitle",  fontName="Times-Bold", fontSize=10, leading=12, alignment=TA_CENTER)
     sNomor  = PS("fNomor",  fontName="Times-Bold", fontSize=8.5, leading=11, alignment=TA_CENTER)
     sSec    = PS("fSec",    fontName="Times-Bold", fontSize=8, leading=10)
@@ -1013,8 +1014,8 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
         )
     data_atasan = [
         [Paragraph("<b>VII. PERTIMBANGAN ATASAN LANGSUNG</b>", sSec), "", "", "", ""],
-        [Paragraph("DISETUJUI", sNCenB), Paragraph("PERUBAHAN", sNCenB),
-         Paragraph("DITANGGUHKAN", sNCenB), Paragraph("TIDAK<br/>DISETUJUI", sNCenB),
+        [Paragraph("DISETUJUI", sOptHdr), Paragraph("PERUBAHAN", sOptHdr),
+         Paragraph("DITANGGUHKAN", sOptHdr), Paragraph("TIDAK<br/>DISETUJUI", sOptHdr),
          Paragraph(txt_atasan_ttd, sNCen)],
         [Paragraph(v_setuju, sNCenB), Paragraph("", sNCenB), Paragraph("", sNCenB), Paragraph(v_tolak, sNCenB), ""]
     ]
@@ -1024,6 +1025,8 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
         ("SPAN", (4,1), (4,2)),
         ("VALIGN", (0,1), (-1,-1), "MIDDLE"),
         ("VALIGN", (4,1), (4,2), "TOP"),
+        ("LEFTPADDING", (0,1), (3,1), 1),
+        ("RIGHTPADDING", (0,1), (3,1), 1),
         ("TOPPADDING", (4,1), (4,2), 3),
         ("BOTTOMPADDING", (4,1), (4,2), 4),
         ("BOTTOMPADDING", (0,2), (3,2), 10),
@@ -1033,31 +1036,27 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
     el.append(Spacer(1, 1.5*mm))
 
     # VIII. KEPUTUSAN PEJABAT YANG BERWENANG MEMBERIKAN CUTI
-    # Kolom Kepala Dinas menyediakan ruang lebih besar untuk tanda tangan elektronik (QR code) maupun cap/tanda tangan basah.
+    # Kolom Kepala Dinas menyediakan ruang tanda tangan dan cap dinas yang lapang dan bersih.
     kadin_nama_str = kepala_nama or ""
     kadin_nip_str  = kepala_nip  or ""
-    # Placeholder QR code dalam teks ASCII sederhana (kompatibel ReportLab Paragraph)
-    qr_placeholder = "[ Area TTD Elektronik / QR Code ]"
     if kadin_nama_str:
         txt_kadin_ttd = (
-            f"{kepala_jabatan},<br/><br/>"
-            f"{qr_placeholder}<br/>"
-            f"<br/><br/><br/><br/>"
+            f"{kepala_jabatan},<br/>"
+            f"<br/><br/><br/><br/><br/><br/><br/>"
             f"<b>{kadin_nama_str}</b><br/>"
             f"NIP. {kadin_nip_str}"
         )
     else:
         txt_kadin_ttd = (
-            f"{kepala_jabatan},<br/><br/>"
-            f"{qr_placeholder}<br/>"
-            f"<br/><br/><br/><br/>"
+            f"{kepala_jabatan},<br/>"
+            f"<br/><br/><br/><br/><br/><br/><br/>"
             "( .................................................... )<br/>"
             "NIP. ...................................................."
         )
     data_pejabat = [
         [Paragraph("<b>VIII. KEPUTUSAN PEJABAT YANG BERWENANG MEMBERIKAN CUTI</b>", sSec), "", "", "", ""],
-        [Paragraph("DISETUJUI", sNCenB), Paragraph("PERUBAHAN", sNCenB),
-         Paragraph("DITANGGUHKAN", sNCenB), Paragraph("TIDAK<br/>DISETUJUI", sNCenB),
+        [Paragraph("DISETUJUI", sOptHdr), Paragraph("PERUBAHAN", sOptHdr),
+         Paragraph("DITANGGUHKAN", sOptHdr), Paragraph("TIDAK<br/>DISETUJUI", sOptHdr),
          Paragraph(txt_kadin_ttd, sNCen)],
         [Paragraph(v_setuju, sNCenB), Paragraph("", sNCenB), Paragraph("", sNCenB), Paragraph(v_tolak, sNCenB), ""]
     ]
@@ -1067,6 +1066,8 @@ def _buat_formulir_flowables(p, j, j_prev, instansi, kepala_nama, kepala_nip, ke
         ("SPAN", (4,1), (4,2)),
         ("VALIGN", (0,1), (-1,-1), "MIDDLE"),
         ("VALIGN", (4,1), (4,2), "TOP"),
+        ("LEFTPADDING", (0,1), (3,1), 1),
+        ("RIGHTPADDING", (0,1), (3,1), 1),
         ("TOPPADDING", (4,1), (4,2), 3),
         ("BOTTOMPADDING", (4,1), (4,2), 5),
         ("BOTTOMPADDING", (0,2), (3,2), 10),
